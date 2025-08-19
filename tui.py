@@ -9,6 +9,7 @@ from Board.board import Board
 from Board.constants import BOARD_SIZE, FILES_LABELS, RANKS_LABELS, EMPTY
 from MoveGeneration.move_generation import calculate_legal_moves
 from Engine.board_evalation import evaluate
+from Engine.engine import get_best_move
 
 
 Square = Tuple[int, int]  # (rank, file), rank 0 at top (8th), file 0 at left (a)
@@ -16,6 +17,8 @@ Square = Tuple[int, int]  # (rank, file), rank 0 at top (8th), file 0 at left (a
 CELL_W = 3
 BOARD_TOP = 2
 BOARD_LEFT = 4
+
+ENGINE_SEARCH_DEPTH = 3
 
 
 def init_colors():
@@ -50,7 +53,7 @@ def draw_labels(stdscr):
 		addstr_safe(stdscr, BOARD_TOP + r, 0, f"{RANKS_LABELS[r]:>2}", curses.color_pair(1))
 
 
-def draw_board(stdscr, board: Board, cursor: Square, selected: Optional[Square], move_targets: Set[Square], turn: str):
+def draw_board(stdscr, board: Board, cursor: Square, selected: Optional[Square], move_targets: Set[Square], turn: str, engine_info: Optional[str] = None):
 	for r in range(BOARD_SIZE):
 		for f in range(BOARD_SIZE):
 			y = BOARD_TOP + r
@@ -80,8 +83,12 @@ def draw_board(stdscr, board: Board, cursor: Square, selected: Optional[Square],
 	score = evaluate(board, turn)
 	addstr_safe(stdscr, BOARD_TOP + BOARD_SIZE + 1, 0, f"Eval ({turn}): {score/100:+.2f}", curses.color_pair(1))
 
+	# last engine info line (if any)
+	if engine_info:
+		addstr_safe(stdscr, BOARD_TOP + BOARD_SIZE + 2, 0, engine_info, curses.color_pair(1))
+
 	# info line
-	addstr_safe(stdscr, BOARD_TOP + BOARD_SIZE + 2, 0, f"Turn: {turn}    Arrows: move cursor   Enter/Space: select/move   Esc: cancel   Q: quit", curses.color_pair(1))
+	addstr_safe(stdscr, BOARD_TOP + BOARD_SIZE + 3, 0, f"Turn: {turn}    Arrows: move cursor   Enter/Space: select/move   Esc: cancel   Q: quit", curses.color_pair(1))
 
 
  
@@ -108,6 +115,13 @@ def can_select(board: Board, turn: str, sq: Square) -> bool:
 	return (p.isupper() and turn == 'white') or (p.islower() and turn == 'black')
 
 
+def _format_move(move: Tuple[Square, Square]) -> str:
+	(frm, to) = move
+	fr, ff = frm
+	tr, tf = to
+	return f"{FILES_LABELS[ff]}{RANKS_LABELS[fr]}{FILES_LABELS[tf]}{RANKS_LABELS[tr]}"
+
+
 def main(stdscr):
 	try:
 		curses.curs_set(0)
@@ -132,11 +146,12 @@ def main(stdscr):
 	cursor: Square = (6, 4)  # start near white king
 	selected: Optional[Square] = None
 	move_targets: Set[Square] = set()
+	last_engine_info: Optional[str] = None
 
 	while True:
 		stdscr.clear()
 		draw_labels(stdscr)
-		draw_board(stdscr, board, cursor, selected, move_targets, turn)
+		draw_board(stdscr, board, cursor, selected, move_targets, turn, last_engine_info)
 		stdscr.refresh()
 
 		key = stdscr.getch()
@@ -166,6 +181,16 @@ def main(stdscr):
 								selected = None
 								move_targets.clear()
 								turn = 'black' if turn == 'white' else 'white'
+								if turn == 'black':
+									best_move, best_score = get_best_move(board, ENGINE_SEARCH_DEPTH, 'black')
+									if best_move is not None:
+										(fr2, ff2), (tr2, tf2) = best_move
+										board.make_move(fr2, ff2, tr2, tf2)
+										last_engine_info = f"Engine (black): {_format_move(best_move)}  Eval: {best_score/100:+.2f}"
+										print(last_engine_info)
+										turn = 'white'
+									else:
+										print("Engine (black): no legal moves")
 							else:
 								# reselect if clicking on own piece; otherwise cancel
 								if can_select(board, turn, cursor):
@@ -215,6 +240,16 @@ def main(stdscr):
 					selected = None
 					move_targets.clear()
 					turn = 'black' if turn == 'white' else 'white'
+					if turn == 'black':
+						best_move, best_score = get_best_move(board, ENGINE_SEARCH_DEPTH, 'black')
+						if best_move is not None:
+							(fr2, ff2), (tr2, tf2) = best_move
+							board.make_move(fr2, ff2, tr2, tf2)
+							last_engine_info = f"Engine (black): {_format_move(best_move)}  Eval: {best_score/100:+.2f}"
+							print(last_engine_info)
+							turn = 'white'
+						else:
+							print("Engine (black): no legal moves")
 				else:
 					# reselect if on own piece, otherwise cancel
 					if can_select(board, turn, cursor):
