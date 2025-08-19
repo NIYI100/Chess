@@ -6,13 +6,15 @@ from Board.constants import BLACK_PAWN, BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, 
 def generate_moves(board: Board, color: str):
     """Generate all legal moves for a given color"""
     moves = []
+    captures = []
     for rank in range(BOARD_SIZE):
         for file in range(BOARD_SIZE):
             piece = board.board[rank][file]
             if piece != EMPTY and piece.isupper() == (color == 'white'):
-                piece_moves = calculate_legal_moves(board, (rank, file))
+                piece_moves, piece_captures = calculate_legal_moves(board, (rank, file))
                 moves.extend(piece_moves)
-    return moves
+                captures.extend(piece_captures)
+    return captures + moves
 
 
 def calculate_legal_moves(board: Board, from_square: tuple[int, int]):
@@ -49,6 +51,7 @@ def generate_pawn_moves(board: Board, from_square: tuple[int, int]):
     piece = board.board[from_rank][from_file]
     is_white = piece.isupper()
     moves = []
+    captures = []
     
     # Direction: white pawns move up (decreasing rank), black pawns move down (increasing rank)
     direction = -1 if is_white else 1
@@ -72,10 +75,10 @@ def generate_pawn_moves(board: Board, from_square: tuple[int, int]):
         if (0 <= new_rank < BOARD_SIZE and 0 <= new_file < BOARD_SIZE):
             target_piece = board.board[new_rank][new_file]
             if target_piece != EMPTY and target_piece.isupper() != is_white:
-                moves.append((from_square, (new_rank, new_file)))
+                captures.append((from_square, (new_rank, new_file)))
     
     #TODO: En passant
-    return moves
+    return moves, captures
 
 
 def generate_rook_moves(board: Board, from_square: tuple[int, int]):
@@ -84,6 +87,7 @@ def generate_rook_moves(board: Board, from_square: tuple[int, int]):
     piece = board.board[from_rank][from_file]
     is_white = piece.isupper()
     moves = []
+    captures = []
     
     # Rook moves in straight lines (horizontal and vertical)
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]  # right, left, down, up
@@ -100,12 +104,12 @@ def generate_rook_moves(board: Board, from_square: tuple[int, int]):
             if target_piece == EMPTY:
                 moves.append((from_square, (new_rank, new_file)))
             elif target_piece.isupper() != is_white:
-                moves.append((from_square, (new_rank, new_file)))
+                captures.append((from_square, (new_rank, new_file)))
                 break
             else:
                 break  # Own piece blocking
     
-    return moves
+    return moves, captures
 
 
 def generate_knight_moves(board: Board, from_square: tuple[int, int]):
@@ -114,7 +118,8 @@ def generate_knight_moves(board: Board, from_square: tuple[int, int]):
     piece = board.board[from_rank][from_file]
     is_white = piece.isupper()
     moves = []
-    
+    captures = []
+
     # Knight moves in L-shape
     knight_moves = [
         (-2, -1), (-2, 1), (-1, -2), (-1, 2),
@@ -127,10 +132,12 @@ def generate_knight_moves(board: Board, from_square: tuple[int, int]):
         
         if 0 <= new_rank < BOARD_SIZE and 0 <= new_file < BOARD_SIZE:
             target_piece = board.board[new_rank][new_file]
-            if target_piece == EMPTY or target_piece.isupper() != is_white:
+            if target_piece == EMPTY:
                 moves.append((from_square, (new_rank, new_file)))
+            if target_piece.isupper() != is_white:
+                captures.append((from_square, (new_rank, new_file)))
     
-    return moves
+    return moves, captures
 
 
 def generate_bishop_moves(board: Board, from_square: tuple[int, int]):
@@ -139,7 +146,8 @@ def generate_bishop_moves(board: Board, from_square: tuple[int, int]):
     piece = board.board[from_rank][from_file]
     is_white = piece.isupper()
     moves = []
-    
+    captures = []
+
     # Bishop moves diagonally
     directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
     
@@ -155,20 +163,20 @@ def generate_bishop_moves(board: Board, from_square: tuple[int, int]):
             if target_piece == EMPTY:
                 moves.append((from_square, (new_rank, new_file)))
             elif target_piece.isupper() != is_white:
-                moves.append((from_square, (new_rank, new_file)))
+                captures.append((from_square, (new_rank, new_file)))
                 break
             else:
                 break  # Own piece blocking
     
-    return moves
+    return moves, captures
 
 
 def generate_queen_moves(board: Board, from_square: tuple[int, int]):
     """Generate moves for a queen (combination of rook and bishop)"""
     # Queen combines rook and bishop moves
-    rook_moves = generate_rook_moves(board, from_square)
-    bishop_moves = generate_bishop_moves(board, from_square)
-    return rook_moves + bishop_moves
+    rook_moves, rook_captures = generate_rook_moves(board, from_square)
+    bishop_moves, bishop_captures = generate_bishop_moves(board, from_square)
+    return rook_moves + bishop_moves, rook_captures + bishop_captures
 
 
 def generate_king_moves(board: Board, from_square: tuple[int, int]):
@@ -177,7 +185,8 @@ def generate_king_moves(board: Board, from_square: tuple[int, int]):
     piece = board.board[from_rank][from_file]
     is_white = piece.isupper()
     moves = []
-    
+    captures = []
+
     # King moves one square in any direction
     king_moves = [
         (-1, -1), (-1, 0), (-1, 1),
@@ -191,9 +200,11 @@ def generate_king_moves(board: Board, from_square: tuple[int, int]):
         
         if 0 <= new_rank < BOARD_SIZE and 0 <= new_file < BOARD_SIZE:
             target_piece = board.board[new_rank][new_file]
-            if target_piece == EMPTY or target_piece.isupper() != is_white:
+            if target_piece == EMPTY:
                 moves.append((from_square, (new_rank, new_file)))
+            elif target_piece.isupper() != is_white:
+                captures.append((from_square, (new_rank, new_file)))
     
-    return moves
+    return moves, captures
 
     
