@@ -168,8 +168,8 @@ def main(stdscr):
 						if selected is None:
 							if can_select(board, turn, cursor):
 								selected = cursor
-								moves = calculate_legal_moves(board, selected)
-								move_targets = {to for (_frm, to) in moves}
+								moves, captures = calculate_legal_moves(board, selected)
+								move_targets = {to for (_frm, to) in (captures + moves)}
 							else:
 								selected = None
 								move_targets.clear()
@@ -182,11 +182,11 @@ def main(stdscr):
 								move_targets.clear()
 								turn = 'black' if turn == 'white' else 'white'
 								if turn == 'black':
-									best_move, best_score = get_best_move(board, ENGINE_SEARCH_DEPTH, 'black')
+									best_move, best_score, used_tt = get_best_move(board, ENGINE_SEARCH_DEPTH, 'black')
 									if best_move is not None:
 										(fr2, ff2), (tr2, tf2) = best_move
 										board.make_move(fr2, ff2, tr2, tf2)
-										last_engine_info = f"Engine (black): {_format_move(best_move)}  Eval: {best_score/100:+.2f}"
+										last_engine_info = f"Engine (black): {_format_move(best_move)}  Eval: {best_score/100:+.2f}  TT: {'yes' if used_tt else 'no'}"
 										print(last_engine_info)
 										turn = 'white'
 									else:
@@ -195,8 +195,8 @@ def main(stdscr):
 								# reselect if clicking on own piece; otherwise cancel
 								if can_select(board, turn, cursor):
 									selected = cursor
-									moves = calculate_legal_moves(board, selected)
-									move_targets = {to for (_frm, to) in moves}
+									moves, captures = calculate_legal_moves(board, selected)
+									move_targets = {to for (_frm, to) in (captures + moves)}
 								else:
 									selected = None
 									move_targets.clear()
@@ -227,8 +227,8 @@ def main(stdscr):
 			if selected is None:
 				if can_select(board, turn, cursor):
 					selected = cursor
-					moves = calculate_legal_moves(board, selected)
-					move_targets = {to for (_frm, to) in moves}
+					moves, captures = calculate_legal_moves(board, selected)
+					move_targets = {to for (_frm, to) in (captures + moves)}
 				else:
 					selected = None
 					move_targets.clear()
@@ -241,11 +241,11 @@ def main(stdscr):
 					move_targets.clear()
 					turn = 'black' if turn == 'white' else 'white'
 					if turn == 'black':
-						best_move, best_score = get_best_move(board, ENGINE_SEARCH_DEPTH, 'black')
+						best_move, best_score, used_tt = get_best_move(board, ENGINE_SEARCH_DEPTH, 'black')
 						if best_move is not None:
 							(fr2, ff2), (tr2, tf2) = best_move
 							board.make_move(fr2, ff2, tr2, tf2)
-							last_engine_info = f"Engine (black): {_format_move(best_move)}  Eval: {best_score/100:+.2f}"
+							last_engine_info = f"Engine (black): {_format_move(best_move)}  Eval: {best_score/100:+.2f}  TT: {'yes' if used_tt else 'no'}"
 							print(last_engine_info)
 							turn = 'white'
 						else:
@@ -254,8 +254,8 @@ def main(stdscr):
 					# reselect if on own piece, otherwise cancel
 					if can_select(board, turn, cursor):
 						selected = cursor
-						moves = calculate_legal_moves(board, selected)
-						move_targets = {to for (_frm, to) in moves}
+						moves, captures = calculate_legal_moves(board, selected)
+						move_targets = {to for (_frm, to) in (captures + moves)}
 					else:
 						selected = None
 						move_targets.clear()

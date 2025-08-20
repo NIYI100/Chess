@@ -1,4 +1,5 @@
 from .constants import *
+from .zobrist import compute_piece_hash, PIECE_TO_INDEX, ZOBRIST_PIECE_KEYS
 
 class Board:
     def __init__(self, position=None):
@@ -11,6 +12,8 @@ class Board:
             self.board = [row[:] for row in STARTING_POSITION]
         else:
             self.board = [row[:] for row in position]
+        # Incremental Zobrist piece-hash (excludes side-to-move)
+        self.zhash: int = compute_piece_hash(self)
     
     def get_piece(self, rank, file):
         """
@@ -128,7 +131,22 @@ class Board:
         if piece == EMPTY:
             return False
         
-        # Make the move
+        # Incremental Zobrist update: remove moving piece from source, toggle piece at dest
+        from_sq = from_rank * BOARD_SIZE + from_file
+        to_sq = to_rank * BOARD_SIZE + to_file
+        moving_index = PIECE_TO_INDEX[piece]
+
+        # If capturing, remove captured piece at destination from hash first
+        captured = self.board[to_rank][to_file]
+        if captured != EMPTY:
+            self.zhash ^= ZOBRIST_PIECE_KEYS[PIECE_TO_INDEX[captured]][to_sq]
+
+        # Remove piece from source
+        self.zhash ^= ZOBRIST_PIECE_KEYS[moving_index][from_sq]
+        # Add piece to destination
+        self.zhash ^= ZOBRIST_PIECE_KEYS[moving_index][to_sq]
+
+        # Make the move on the board
         self.board[to_rank][to_file] = piece
         self.board[from_rank][from_file] = EMPTY
         
