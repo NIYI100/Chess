@@ -182,12 +182,10 @@ def main(stdscr):
 								move_targets.clear()
 								turn = 'black' if turn == 'white' else 'white'
 								if turn == 'black':
-									best_move, best_score, used_tt = get_best_move(board, ENGINE_SEARCH_DEPTH, 'black')
+									best_score, best_move = get_best_move(board, ENGINE_SEARCH_DEPTH, 'black')
 									if best_move is not None:
 										(fr2, ff2), (tr2, tf2) = best_move
 										board.make_move(fr2, ff2, tr2, tf2)
-										last_engine_info = f"Engine (black): {_format_move(best_move)}  Eval: {best_score/100:+.2f}  TT: {'yes' if used_tt else 'no'}"
-										print(last_engine_info)
 										turn = 'white'
 									else:
 										print("Engine (black): no legal moves")

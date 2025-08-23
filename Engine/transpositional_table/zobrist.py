@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from typing import Dict, List
 
-from .constants import BOARD_SIZE, EMPTY
+from Board.constants import BOARD_SIZE, EMPTY
 
 
 # Piece-to-index mapping for Zobrist keys (12 piece types)

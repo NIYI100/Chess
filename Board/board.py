@@ -1,5 +1,5 @@
 from .constants import *
-from .zobrist import compute_piece_hash, PIECE_TO_INDEX, ZOBRIST_PIECE_KEYS
+from Engine.transpositional_table.zobrist import compute_piece_hash, PIECE_TO_INDEX, ZOBRIST_PIECE_KEYS
 
 class Board:
     def __init__(self, position=None):
